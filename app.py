@@ -4,6 +4,7 @@ import cv2
 from deepface import DeepFace
 import time
 import numpy as np
+import atexit
 
 app = Flask(__name__)
 cap = cv2.VideoCapture(0)
@@ -109,6 +110,17 @@ def complete_drawing():
 def complete_voice():
     advance_story() 
     return jsonify({"status": "success"})
+
+# 💡 效能救星 5：優雅關機機制，保證程式結束時徹底釋放攝影機與記憶體
+def cleanup():
+    print("\n正在關閉攝影機與釋放 AI 資源...")
+    if cap.isOpened():
+        cap.release()
+    cv2.destroyAllWindows()
+    print("資源釋放完畢，安全下線！")
+
+# 註冊這個函數，只要程式一關閉就會自動執行
+atexit.register(cleanup)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
