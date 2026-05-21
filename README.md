@@ -1,5 +1,8 @@
 # 愛探險的小帕 — 快速使用說明
 https://m.youtube.com/watch?v=RWIJJGrqhWk&pp=0gcJCVMCo7VqN5tD4gcPEg1qcC5uYXZlci5saW5liggCQAE%3D&ra=m
+
+https://canva.link/gmkwyh41t1vmee5
+
 簡短說明：本專案為以 Flask 提供前端互動介面的多模態情緒繪本示範，結合 OpenCV 與 DeepFace 做影像/情緒辨識。此 README 聚焦於「如何快速在本機上執行」與常見問題排除。
 
 **環境需求**
