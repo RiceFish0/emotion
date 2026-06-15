@@ -101,6 +101,7 @@
         
         <img id="camera-box" src="{{ url_for('video_feed') }}">
         <canvas id="drawing-canvas"></canvas>
+        <img id="user-artwork" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 15; pointer-events: none; display: none;">
         <button type="button" id="finish-draw-btn" class="btn btn-success btn-lg rounded-pill px-5 py-3 fs-3 fw-bold">✨ 我畫好了！</button>
         <div id="voice-indicator"><i class="bi bi-mic-fill"></i> 請大喊！</div>
 
@@ -132,6 +133,15 @@
 
         // --- 畫好了 ---
         document.getElementById('finish-draw-btn').addEventListener('click', function() {
+            // 💡 魔法核心：在清空畫布前，先把小朋友畫的內容存成一張去背圖片 (Base64)
+            let drawingDataUrl = canvas.toDataURL('image/png');
+            
+            // 把它顯示在我們剛剛新增的圖片標籤上
+            let artworkImg = document.getElementById('user-artwork');
+            artworkImg.src = drawingDataUrl;
+            artworkImg.style.display = "block";
+
+            // 清空原本的畫布，並通知後端過關
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
             fetch('/complete_drawing', { method: 'POST' }).then(() => fetchStory()); 
         });
@@ -206,12 +216,16 @@
                     document.getElementById('story-title').innerText = data.title;
                     document.getElementById('story-text').innerHTML = data.content;
                     
+                    // 尋找這段程式碼並加上隱藏指令
                     if(data.video !== currentVideoFile) {
                         currentVideoFile = data.video;
                         let videoPlayer = document.getElementById('bg-video');
                         videoPlayer.src = "/static/videos/" + currentVideoFile;
                         videoPlayer.load();
                         videoPlayer.play().catch(e=>{});
+                        
+                        // 💡 換場景時，把上一關畫的圖案藏起來
+                        document.getElementById('user-artwork').style.display = "none";
                     }
 
                     let btn = document.getElementById('finish-draw-btn');
