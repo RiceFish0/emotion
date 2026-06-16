@@ -103,6 +103,7 @@
         <canvas id="drawing-canvas"></canvas>
         <img id="user-artwork" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 15; pointer-events: none; display: none;">
         <button type="button" id="finish-draw-btn" class="btn btn-success btn-lg rounded-pill px-5 py-3 fs-3 fw-bold">✨ 我畫好了！</button>
+        <button type="button" id="next-chapter-btn" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fs-3 fw-bold" style="position: absolute; bottom: 40px; right: 40px; z-index: 50; display: none;">下一關 👉</button>
         <div id="voice-indicator"><i class="bi bi-mic-fill"></i> 請大喊！</div>
 
         <div id="ui-panel">
@@ -131,21 +132,84 @@
             storyLoop = setInterval(fetchStory, 1000);
         });
 
-        // --- 畫好了 ---
+        // --- 1. 畫好了按鈕點擊邏輯 ---
         document.getElementById('finish-draw-btn').addEventListener('click', function() {
-            // 💡 魔法核心：在清空畫布前，先把小朋友畫的內容存成一張去背圖片 (Base64)
             let drawingDataUrl = canvas.toDataURL('image/png');
-            
-            // 把它顯示在我們剛剛新增的圖片標籤上
             let artworkImg = document.getElementById('user-artwork');
             artworkImg.src = drawingDataUrl;
             artworkImg.style.display = "block";
+            
+            // 歸零設定
+            artworkImg.style.transition = "none";
+            artworkImg.style.transform = "translate(0px, 0px) scale(1)";
 
-            // 清空原本的畫布，並通知後端過關
             ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            fetch('/complete_drawing', { method: 'POST' }).then(() => fetchStory()); 
+            canvas.style.display = "none"; // 隱藏畫布
+            
+            // 🛑 核心需求 1：字卡消失，按鈕變身為下一關
+            document.getElementById('ui-panel').style.display = "none";      // 讓畫面上方字卡消失
+            document.getElementById('finish-draw-btn').style.display = "none"; // 隱藏我畫好了
+            document.getElementById('next-chapter-btn').style.display = "block"; // 顯示下一關按鈕
+
+            if (storyLoop) clearInterval(storyLoop); // 暫停背景巡邏
+
+            fetch('/complete_drawing', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.play_action_video) {
+                        let videoPlayer = document.getElementById('bg-video');
+                        
+                        // 防呆機制
+                        videoPlayer.onerror = function() {
+                            console.error("找不到影片檔案！");
+                            document.getElementById('next-chapter-btn').click(); // 找不到就直接進下一關
+                        };
+
+                        // 撥放第二個展示畫作的影片
+                        videoPlayer.src = "/static/videos/" + data.play_action_video;
+                        videoPlayer.play().then(() => {
+                            void artworkImg.offsetWidth; 
+                            artworkImg.style.transition = "transform 1.5s ease-in-out"; 
+                            
+                            // 🛑 核心需求 2：將小朋友的塗鴉移到新影片的對應位置
+                            if (data.completed_state === "draw_torch") {
+                                // 關卡五：火焰移到牆壁火把位置 (請根據你的畫面微調 Xvw, Yvh 座標)
+                                artworkImg.style.transform = "translate(15vw, -18vh) scale(0.4)"; 
+                            } else if (data.completed_state === "river") {
+                                // 關卡七：橋移到河流中央
+                                artworkImg.style.transform = "translate(0vw, 20vh) scale(0.8)";
+                            } else if (data.completed_state === "draw_umbrella") {
+                                // 關卡十二：雨傘移到小帕頭上
+                                artworkImg.style.transform = "translate(0vw, -15vh) scale(0.6)";
+                            }
+                        });
+
+                        videoPlayer.onended = function() {
+                            videoPlayer.onended = null;
+                            videoPlayer.onerror = null;
+                            // 影片播完後保持現狀，等玩家手動點擊「下一關」
+                        };
+                    } else {
+                        document.getElementById('next-chapter-btn').click();
+                    }
+                })
+                .catch(err => { document.getElementById('next-chapter-btn').click(); });
         });
 
+        // --- 2. 新增：下一關按鈕點擊邏輯 ---
+        document.getElementById('next-chapter-btn').addEventListener('click', function() {
+            // 隱藏自己與塗鴉，恢復字卡顯示
+            document.getElementById('next-chapter-btn').style.display = "none";
+            document.getElementById('user-artwork').style.display = "none";
+            document.getElementById('ui-panel').style.display = "block"; 
+            
+            // 告訴後端：我們看完了，現在可以正式切換到下一關了
+            fetch('/next_chapter', { method: 'POST' })
+                .then(() => {
+                    storyLoop = setInterval(fetchStory, 1000); // 重啟巡邏
+                    fetchStory(); // 載入下一關（第六、八、十三關）
+                });
+        });
         // --- 秘密密道 (雙擊) ---
         document.getElementById('story-card').addEventListener('dblclick', function() {
             if (currentTask === "voice_shout") {

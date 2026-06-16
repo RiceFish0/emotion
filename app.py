@@ -14,14 +14,14 @@ SCENES = {
     "fog": {"title": "第二章：迷霧森林", "content": "🌟 笑容真好看！<br><br>剛出發就起了大霧，看不見路了！請對著鏡頭『用力揮動雙手』，把迷霧吹散！", "video": "scene02_fog.mp4", "task": "motion_wave", "next": "magic_door"},
     "magic_door": {"title": "第三章：沉睡的石門", "content": "🌟 霧散開了！<br><br>前面有一扇巨大的魔法門擋住去路。請對著麥克風大喊『芝麻開門』來喚醒它！", "video": "scene03_door.mp4", "task": "voice_shout", "next": "dark_cave"},
     "dark_cave": {"title": "第四章：黑暗山洞", "content": "🌟 門打開了！<br><br>山洞裡好黑好可怕，小帕有點想哭... 請對鏡頭『皺起眉頭 (難過)』，陪他一起度過恐懼。", "video": "scene04_cave.mp4", "task": "emotion_sad", "next": "draw_torch"},
-    "draw_torch": {"title": "第五章：點亮希望", "content": "🌟 謝謝你的陪伴！<br><br>我們需要一點光！請用滑鼠在畫面上『畫一把火炬』，照亮前面的路！", "video": "scene05_dark.mp4", "task": "draw_torch", "next": "bats"},
+    "draw_torch": {"title": "第五章：點亮希望", "content": "🌟 謝謝你的陪伴！<br><br>我們需要一點光！請用滑鼠在畫面上『畫一把火』，點亮火炬照亮前面的路！", "video": "scene05_wait.mp4", "task": "draw_torch", "next": "bats"},
     "bats": {"title": "第六章：蝙蝠驚魂", "content": "🌟 亮起來了！<br><br>哇！突然飛出一大群蝙蝠！請對著鏡頭『張大嘴巴 (驚訝)』，把它們嚇跑！", "video": "scene06_bats.mp4", "task": "emotion_surprise", "next": "river"},
-    "river": {"title": "第七章：地下暗河", "content": "🌟 蝙蝠飛走了！<br><br>糟糕，前面有一條又急又深的地底河流... 請在畫面上『畫出一座橋』幫助他過河！", "video": "scene07_river.mp4", "task": "draw_bridge", "next": "out_cave"},
+    "river": {"title": "第七章：地下暗河", "content": "🌟 蝙蝠飛走了！<br><br>糟糕，前面有一條又急又深的地底河流... 請在畫面上『畫出一座橋』幫助他過河！", "video": "scene07_wait.mp4", "task": "draw_bridge", "next": "out_cave"},
     "out_cave": {"title": "第八章：重見光明", "content": "🌟 順利過河！<br><br>終於走出山洞了，外面的陽光好溫暖！請對著鏡頭露出『大大的微笑』！", "video": "scene08_sun.mp4", "task": "emotion_happy", "next": "lost_map"},
     "lost_map": {"title": "第九章：樂譜飛走了", "content": "🌟 繼續前進！<br><br>哎呀！一陣狂風把最重要的樂譜吹到了半空中！請趕快對著鏡頭『用力揮手』把它抓回來！", "video": "scene09_wind.mp4", "task": "motion_wave", "next": "find_instrument"},
     "find_instrument": {"title": "第十章：尋找樂器", "content": "🌟 抓到樂譜了！<br><br>現在小帕需要一個最棒的樂器來表演。小朋友，請在畫面上『畫一個麥克風』！", "video": "scene10_search.mp4", "task": "draw_mic", "next": "rain"},
     "rain": {"title": "第十一章：突如其來的大雨", "content": "🌟 麥克風真帥！<br><br>怎麼突然下大雨了？小帕淋成了落湯雞，好氣餒... 請對鏡頭『皺起眉頭 (難過)』幫他想辦法。", "video": "scene11_rain.mp4", "task": "emotion_sad", "next": "draw_umbrella"},
-    "draw_umbrella": {"title": "第十二章：創造雨傘", "content": "🌟 不能放棄！<br><br>我們來幫小帕擋雨吧！請在畫面上『畫一把大雨傘』保護他和麥克風！", "video": "scene12_wet.mp4", "task": "draw_umbrella", "next": "family_rescue"},
+    "draw_umbrella": {"title": "第十二章：創造雨傘", "content": "🌟 不能放棄！<br><br>我們來幫小帕擋雨吧！請在畫面上『畫一把大雨傘』保護他和麥克風！", "video": "scene12_wait.mp4", "task": "draw_umbrella", "next": "family_rescue"},
     "family_rescue": {"title": "第十三章：家人的溫暖", "content": "🌟 畫得太好了！<br><br>家人們也帶著大雨傘趕來幫忙了，雨停了！請對著鏡頭露出『開心的笑容』謝謝家人！", "video": "scene13_family.mp4", "task": "emotion_happy", "next": "mic_test"},
     "mic_test": {"title": "第十四章：舞台測試", "content": "🌟 終於抵達舞台！<br><br>準備開始囉！請對著麥克風大喊一聲『Test Test！』，確認音響有沒有問題！", "video": "scene14_stage.mp4", "task": "voice_shout", "next": "concert"},
     "concert": {"title": "第十五章：浪漫R&B之夜", "content": "🌟 聲音很完美！<br><br>小帕唱起了帶有輕快 R&B 節奏的迷人旋律！請在畫面上『畫一個大音符』，讓氣氛嗨到最高點！", "video": "scene15_sing.mp4", "task": "draw_note", "next": "game_over"},
@@ -101,9 +101,30 @@ def video_feed(): return Response(generate_frames(), mimetype='multipart/x-mixed
 @app.route('/get_story')
 def get_story(): return jsonify(SCENES[current_state])
 
+# 💡 建立過場動畫對應表：定義畫完圖後，要播哪一部動畫
+# 💡 更新過場動畫對應表 (請確保這裡的檔名和資料夾裡的完全一模一樣！)
+# 💡 確保這裡的鍵值(Key)跟你的 SCENES 字典裡的 task 一致，且影片檔名完全正確
+ACTION_VIDEOS = {
+    "draw_torch": "scene05_action.mp4",
+    "draw_bridge": "scene07_walk.mp4",
+    "draw_umbrella": "scene12_happy.mp4"
+}
+
 @app.route('/complete_drawing', methods=['POST'])
 def complete_drawing():
-    advance_story() 
+    global current_state
+    # 💡 修正幽靈跳關 Bug：這裡只回傳當前關卡的展示影片與狀態，絕對不呼叫 advance_story()！
+    action_video = ACTION_VIDEOS.get(SCENES[current_state]["task"], "")
+    return jsonify({
+        "status": "success", 
+        "play_action_video": action_video,
+        "completed_state": SCENES[current_state]["task"]
+    })
+
+@app.route('/next_chapter', methods=['POST'])
+def next_chapter():
+    # 💡 當玩家親手按下前端的「下一關」按鈕時，後端才正式推進關卡！
+    advance_story()
     return jsonify({"status": "success"})
 
 @app.route('/complete_voice', methods=['POST'])
