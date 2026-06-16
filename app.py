@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from flask import Flask, render_template, Response, jsonify, request
 import cv2
-from deepface import DeepFace
 import time
-import numpy as np
 import atexit
+
+# 載入我們的兩大引擎
+from image_renderer import prerender_story_video
+from emotion_detector import VisionController
 
 app = Flask(__name__)
 cap = cv2.VideoCapture(0)
+vision = VisionController()
 
 SCENES = {
     "start": {"title": "第一章：音樂會之約", "content": "今天是森林大日子！小帕要舉辦一場音樂會。請對著鏡頭露出『開心的微笑』，我們出發吧！", "video": "scene01_start.mp4", "task": "emotion_happy", "next": "fog"},
@@ -21,11 +24,19 @@ SCENES = {
     "lost_map": {"title": "第九章：樂譜飛走了", "content": "🌟 繼續前進！<br><br>哎呀！一陣狂風把最重要的樂譜吹到了半空中！請趕快對著鏡頭『用力揮手』把它抓回來！", "video": "scene09_wind.mp4", "task": "motion_wave", "next": "find_instrument"},
     "find_instrument": {"title": "第十章：尋找樂器", "content": "🌟 抓到樂譜了！<br><br>現在小帕需要一個最棒的樂器來表演。小朋友，請在畫面上『畫一個麥克風』！", "video": "scene10_search.mp4", "task": "draw_mic", "next": "rain"},
     "rain": {"title": "第十一章：突如其來的大雨", "content": "🌟 麥克風真帥！<br><br>怎麼突然下大雨了？小帕淋成了落湯雞，好氣餒... 請對鏡頭『皺起眉頭 (難過)』幫他想辦法。", "video": "scene11_rain.mp4", "task": "emotion_sad", "next": "draw_umbrella"},
-    "draw_umbrella": {"title": "第十二章：創造雨傘", "content": "🌟 不能放棄！<br><br>我們來幫小帕擋雨吧！請在畫面上『畫一把大雨傘』保護他和麥克風！", "video": "scene12_wait.mp4", "task": "draw_umbrella", "next": "family_rescue"},
+    "draw_umbrella": {"title": "第十二章：創造雨傘", "content": "🌟 不能放棄！<br><br>我們來幫小帕擋雨吧！請在畫面上『畫一把大雨傘』保護小帕！", "video": "scene12_wait.mp4", "task": "draw_umbrella", "next": "family_rescue"},
     "family_rescue": {"title": "第十三章：家人的溫暖", "content": "🌟 畫得太好了！<br><br>家人們也帶著大雨傘趕來幫忙了，雨停了！請對著鏡頭露出『開心的笑容』謝謝家人！", "video": "scene13_family.mp4", "task": "emotion_happy", "next": "mic_test"},
     "mic_test": {"title": "第十四章：舞台測試", "content": "🌟 終於抵達舞台！<br><br>準備開始囉！請對著麥克風大喊一聲『Test Test！』，確認音響有沒有問題！", "video": "scene14_stage.mp4", "task": "voice_shout", "next": "concert"},
     "concert": {"title": "第十五章：浪漫R&B之夜", "content": "🌟 聲音很完美！<br><br>小帕唱起了帶有輕快 R&B 節奏的迷人旋律！請在畫面上『畫一個大音符』，讓氣氛嗨到最高點！", "video": "scene15_sing.mp4", "task": "draw_note", "next": "game_over"},
     "game_over": {"title": "冒險終點", "content": "精彩的冒險結束囉！", "video": "scene15_sing.mp4", "task": "none", "next": "none"}
+}
+
+ACTION_VIDEOS = {
+    "draw_torch": "scene05_action.mp4",    # 關卡五
+    "draw_bridge": "scene07_walk.mp4",     # 關卡七 (需要烘焙)
+    "draw_mic": "scene10_found.mp4",      # 關卡十 (前端瞬移)
+    "draw_umbrella": "scene12_happy.mp4",  # 關卡十二
+    "draw_note": "scene15_sing.mp4"        # 關卡十五
 }
 
 current_state = "start"
@@ -36,56 +47,24 @@ def advance_story():
     next_state = SCENES[current_state]["next"]
     if next_state != "none":
         current_state = next_state
-        # 💡 修正 2：進入新章節時，強制把時間重置，給予 4 秒的「閱讀保護期」，避免 AI 秒殺過關
         last_trigger_time = time.time() 
-        print(f"移動到最新狀態: {current_state}")
 
 def generate_frames():
     global current_state, last_trigger_time
-    prev_gray = None 
     while True:
         success, frame = cap.read()
         if not success: break
             
         frame = cv2.flip(frame, 1)
-        height, width = frame.shape[:2]
-        center_x, center_y = width // 2, height // 2
         current_task = SCENES[current_state]["task"]
-        oval_color = (255, 255, 255)
         
-        if current_task.startswith("emotion"):
-            try:
-                results = DeepFace.analyze(frame, actions=['emotion'], enforce_detection=False)
-                emotion_scores = results[0]['emotion']
-                if current_task == "emotion_happy" and emotion_scores['happy'] > 60:
-                    oval_color = (0, 200, 100)
-                    if time.time() - last_trigger_time > 4:  # 等待 4 秒保護期結束後才放行
-                        advance_story()
-                elif current_task == "emotion_sad" and emotion_scores['sad'] > 60:
-                    oval_color = (255, 100, 100)
-                    if time.time() - last_trigger_time > 4:
-                        advance_story()
-                elif current_task == "emotion_surprise" and emotion_scores['surprise'] > 60:
-                    oval_color = (200, 100, 255) 
-                    if time.time() - last_trigger_time > 4:
-                        advance_story()
-            except: pass
+        # 呼叫大腦處理影像
+        processed_frame, should_advance = vision.process_frame(frame, current_task, last_trigger_time)
+        
+        if should_advance:
+            advance_story()
 
-        elif current_task == "motion_wave":
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (21, 21), 0)
-            if prev_gray is not None:
-                diff = cv2.absdiff(prev_gray, gray)
-                _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-                motion_level = cv2.countNonZero(thresh)
-                if motion_level > 15000: 
-                    oval_color = (0, 255, 255) 
-                    if time.time() - last_trigger_time > 4:
-                        advance_story()
-            prev_gray = gray
-
-        cv2.ellipse(frame, (center_x, center_y), (120, 160), 0, 0, 360, oval_color, 2)
-        ret, buffer = cv2.imencode('.jpg', frame)
+        ret, buffer = cv2.imencode('.jpg', processed_frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
 
 @app.route('/')
@@ -96,34 +75,52 @@ def index():
     return render_template('index.html')
 
 @app.route('/video_feed')
-def video_feed(): return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+def video_feed(): 
+    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 @app.route('/get_story')
-def get_story(): return jsonify(SCENES[current_state])
-
-# 💡 建立過場動畫對應表：定義畫完圖後，要播哪一部動畫
-# 💡 更新過場動畫對應表 (請確保這裡的檔名和資料夾裡的完全一模一樣！)
-# 💡 確保這裡的鍵值(Key)跟你的 SCENES 字典裡的 task 一致，且影片檔名完全正確
-ACTION_VIDEOS = {
-    "draw_torch": "scene05_action.mp4",
-    "draw_bridge": "scene07_walk.mp4",
-    "draw_umbrella": "scene12_happy.mp4"
-}
+def get_story(): 
+    return jsonify(SCENES[current_state])
 
 @app.route('/complete_drawing', methods=['POST'])
 def complete_drawing():
     global current_state
-    # 💡 修正幽靈跳關 Bug：這裡只回傳當前關卡的展示影片與狀態，絕對不呼叫 advance_story()！
-    action_video = ACTION_VIDEOS.get(SCENES[current_state]["task"], "")
+    
+    # 接收前端數據
+    data = request.json
+    base64_str = data.get('image_data', '')
+    current_task = SCENES[current_state]["task"]
+    
+    # 取得對應的成功展示影片路徑
+    action_video_filename = ACTION_VIDEOS.get(current_task, "")
+    action_video_api_path = "" # 這是要交給前端播放的 API 路徑
+
+    if action_video_filename:
+        # 💡 核心邏輯：區分是否需要「後端烘焙」
+        if current_task == "draw_bridge":
+            # 🌟 只有第七關(橋)需要後端 OpenCV 離線算圖，解決鏡頭平移
+            source_path = f"static/videos/{action_video_filename}"
+            output_filename = f"generated_{action_video_filename}"
+            output_path = f"static/videos/{output_filename}"
+            
+            # 執行耗時的算圖工作
+            prerender_story_video(source_path, output_path, base64_str, current_task)
+            
+            # 回傳生成的影片檔名，加上時間戳記防快取
+            action_video_api_path = f"{output_filename}?t={int(time.time())}"
+        else:
+            # 🌟 其他關卡 (火把、雨傘、音符) 攝影機沒動，回傳「原始影片」即可！
+            # 後續交給前端 CSS 進行 0 延遲位移與縮放。
+            action_video_api_path = action_video_filename
+
     return jsonify({
         "status": "success", 
-        "play_action_video": action_video,
-        "completed_state": SCENES[current_state]["task"]
+        "play_action_video": action_video_api_path,
+        "completed_state": current_task
     })
-
+    
 @app.route('/next_chapter', methods=['POST'])
 def next_chapter():
-    # 💡 當玩家親手按下前端的「下一關」按鈕時，後端才正式推進關卡！
     advance_story()
     return jsonify({"status": "success"})
 
@@ -132,15 +129,11 @@ def complete_voice():
     advance_story() 
     return jsonify({"status": "success"})
 
-# 💡 效能救星 5：優雅關機機制，保證程式結束時徹底釋放攝影機與記憶體
 def cleanup():
-    print("\n正在關閉攝影機與釋放 AI 資源...")
-    if cap.isOpened():
-        cap.release()
+    print("\n正在關閉攝影機與釋放資源...")
+    if cap.isOpened(): cap.release()
     cv2.destroyAllWindows()
-    print("資源釋放完畢，安全下線！")
 
-# 註冊這個函數，只要程式一關閉就會自動執行
 atexit.register(cleanup)
 
 if __name__ == "__main__":

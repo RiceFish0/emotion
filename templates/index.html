@@ -9,101 +9,39 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Poppins:wght@700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    
-    <style>
-        body { margin: 0; overflow: hidden; font-family: 'Noto Sans TC', sans-serif; background-color: #000; }
-        #game-container { position: relative; width: 100vw; height: 100vh; }
-
-        /* ================= 遊戲主場景元件 ================= */
-        #bg-video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 10; pointer-events: none; }
-        #camera-box { position: absolute; top: 30px; left: 30px; width: 320px; z-index: 20; border: 4px solid rgba(255,255,255,0.8); border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.6); transition: opacity 0.4s; pointer-events: none; }
-        #drawing-canvas { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 40; cursor: crosshair; display: none; background: rgba(0,0,0,0.2); }
-        #finish-draw-btn { position: absolute; bottom: 40px; right: 40px; z-index: 50; display: none; }
-        #voice-indicator { position: absolute; top: 35%; left: 50%; transform: translate(-50%, -50%); z-index: 30; display: none; font-size: 4rem; color: #fff; text-shadow: 0 0 30px #ffeb3b; animation: pulse 1.5s infinite; pointer-events: none; font-weight: 900; }
-        @keyframes pulse { 0% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } 100% { transform: translate(-50%, -50%) scale(1); } }
-        
-        #ui-panel { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 30; width: 90%; max-width: 800px; text-align: center; }
-        .card-custom { 
-            background: rgba(255, 255, 255, 0.6); /* 💡 把 0.95 降到 0.6，變得更透明 */
-            backdrop-filter: blur(8px); /* 💡 加上一點毛玻璃模糊效果，讓後面的動畫透光但不會干擾文字閱讀 */
-            border-radius: 35px; 
-            padding: 25px; 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4); 
-            border: 1px solid rgba(255,255,255,0.5); 
-            pointer-events: auto; 
-            cursor: pointer; 
-        }
-
-        /* ================= 封面頁 ================= */
-        #cover-page { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #000; transition: opacity 1s ease-in-out; }
-        #cover-bg-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
-        .overlay-dark { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: radial-gradient(circle, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.6) 100%); z-index: 2; }
-        .cover-content { position: relative; z-index: 3; text-align: center; }
-
-        /* ================= 最終大結局頁面 ================= */
-        #end-page { 
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
-            z-index: 20000; display: none; flex-direction: column; justify-content: center; 
-            align-items: center; background: #000; opacity: 0; transition: opacity 1.5s ease-in-out; 
-        }
-        #end-bg-video { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: 1; }
-        #end-overlay { 
-            position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
-            background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%); z-index: 2; 
-        }
-        .end-content { position: relative; z-index: 3; text-align: center; width: 80%; }
-        
-        .end-title { 
-            font-family: 'Poppins', 'Noto Sans TC', sans-serif; font-weight: 900; font-size: 6rem; 
-            color: #ffffff; text-shadow: 0 0 20px rgba(255,255,255,0.5), 0 10px 40px rgba(0,0,0,0.8); letter-spacing: 5px; margin-bottom: 10px;
-        }
-        .end-subtitle { font-size: 2.2rem; color: #f8f9fa; font-weight: 700; text-shadow: 0 4px 10px rgba(0,0,0,0.8); margin-bottom: 50px; }
-        
-        .btn-magical {
-            background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px); border: 2px solid #fff; color: #fff; padding: 20px 60px;
-            font-size: 2rem; border-radius: 100px; font-weight: 900; transition: all 0.4s; box-shadow: 0 0 20px rgba(255,255,255,0.3); animation: breathe 3s infinite;
-        }
-        .btn-magical:hover { background: #fff; color: #000; transform: scale(1.1); box-shadow: 0 0 50px rgba(255,255,255,0.8); }
-        @keyframes breathe { 0% { box-shadow: 0 0 20px rgba(255,255,255,0.2); } 50% { box-shadow: 0 0 40px rgba(255,255,255,0.6); } 100% { box-shadow: 0 0 20px rgba(255,255,255,0.2); } }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body ondragstart="return false;" ondrop="return false;">
 
     <div id="game-container">
-        
         <div id="cover-page">
             <video id="cover-bg-video" autoplay loop muted playsinline><source src="/static/videos/cover_forest.mp4" type="video/mp4"></video>
             <div class="overlay-dark"></div>
             <div class="cover-content">
-                <h1 style="font-weight: 900; font-size: 5.5rem; color: #fff; text-shadow: 0 10px 30px rgba(0,0,0,0.5);"><i class="bi bi-music-note-beamed"></i> 愛探險的小帕</h1>
-                <p style="font-size: 2.2rem; color: rgba(255,255,255,0.9); margin-bottom: 50px; font-weight: bold;">AI 多模態互動魔法繪本</p>
+                <h1 class="cover-title"><i class="bi bi-music-note-beamed"></i> 愛探險的小帕</h1>
+                <p class="cover-subtitle">AI 多模態互動魔法繪本</p>
                 <button type="button" id="start-btn" class="btn btn-warning btn-lg rounded-pill px-5 py-3 fs-2 fw-bold shadow-lg">開始大冒險</button>
             </div>
         </div>
 
         <div id="end-page">
-            <video id="end-bg-video" loop muted playsinline>
-                <source src="/static/videos/scene15_sing.mp4" type="video/mp4">
-            </video>
+            <video id="end-bg-video" loop muted playsinline><source src="/static/videos/scene15_sing.mp4" type="video/mp4"></video>
             <div id="end-overlay"></div>
             <div class="end-content">
                 <h1 class="end-title">大冒險成功！</h1>
                 <h2 class="end-subtitle">小帕在你的幫助下，完成了最完美的音樂會！</h2>
-                <button type="button" class="btn btn-magical" onclick="location.reload()">
-                    <i class="bi bi-arrow-clockwise me-2"></i> 再玩一次
-                </button>
+                <button type="button" class="btn btn-magical" onclick="location.reload()"><i class="bi bi-arrow-clockwise me-2"></i> 再玩一次</button>
             </div>
         </div>
 
         <audio id="bgm" src="/static/audio/bgm.mp3" loop></audio>
-        
         <video id="bg-video" loop muted playsinline></video>
-        
         <img id="camera-box" src="{{ url_for('video_feed') }}">
         <canvas id="drawing-canvas"></canvas>
-        <img id="user-artwork" style="position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 15; pointer-events: none; display: none;">
+        <img id="user-artwork">
+        
         <button type="button" id="finish-draw-btn" class="btn btn-success btn-lg rounded-pill px-5 py-3 fs-3 fw-bold">✨ 我畫好了！</button>
-        <button type="button" id="next-chapter-btn" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fs-3 fw-bold" style="position: absolute; bottom: 40px; right: 40px; z-index: 50; display: none;">下一關 👉</button>
+        <button type="button" id="next-chapter-btn" class="btn btn-primary btn-lg rounded-pill px-5 py-3 fs-3 fw-bold">下一關 👉</button>
         <div id="voice-indicator"><i class="bi bi-mic-fill"></i> 請大喊！</div>
 
         <div id="ui-panel">
@@ -112,216 +50,8 @@
                 <p class="text-dark fs-3 mb-0" id="story-text">請稍候，小帕正在準備行李...</p>
             </div>
         </div>
-
     </div>
 
-    <script>
-        let currentVideoFile = "";
-        let currentTask = "";
-        let isGameEnded = false;
-        let storyLoop;
-
-        // --- 開始遊戲 ---
-        document.getElementById('start-btn').addEventListener('click', function() {
-            document.getElementById('cover-page').style.opacity = '0';
-            setTimeout(() => { document.getElementById('cover-page').style.display = 'none'; }, 1000);
-            let bgm = document.getElementById('bgm');
-            bgm.volume = 0.25; 
-            bgm.play();
-            fetchStory();
-            storyLoop = setInterval(fetchStory, 1000);
-        });
-
-        // --- 1. 畫好了按鈕點擊邏輯 ---
-        document.getElementById('finish-draw-btn').addEventListener('click', function() {
-            let drawingDataUrl = canvas.toDataURL('image/png');
-            let artworkImg = document.getElementById('user-artwork');
-            artworkImg.src = drawingDataUrl;
-            artworkImg.style.display = "block";
-            
-            // 歸零設定
-            artworkImg.style.transition = "none";
-            artworkImg.style.transform = "translate(0px, 0px) scale(1)";
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            canvas.style.display = "none"; // 隱藏畫布
-            
-            // 🛑 核心需求 1：字卡消失，按鈕變身為下一關
-            document.getElementById('ui-panel').style.display = "none";      // 讓畫面上方字卡消失
-            document.getElementById('finish-draw-btn').style.display = "none"; // 隱藏我畫好了
-            document.getElementById('next-chapter-btn').style.display = "block"; // 顯示下一關按鈕
-
-            if (storyLoop) clearInterval(storyLoop); // 暫停背景巡邏
-
-            fetch('/complete_drawing', { method: 'POST' })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.play_action_video) {
-                        let videoPlayer = document.getElementById('bg-video');
-                        
-                        // 防呆機制
-                        videoPlayer.onerror = function() {
-                            console.error("找不到影片檔案！");
-                            document.getElementById('next-chapter-btn').click(); // 找不到就直接進下一關
-                        };
-
-                        // 撥放第二個展示畫作的影片
-                        videoPlayer.src = "/static/videos/" + data.play_action_video;
-                        videoPlayer.play().then(() => {
-                            void artworkImg.offsetWidth; 
-                            artworkImg.style.transition = "transform 1.5s ease-in-out"; 
-                            
-                            // 🛑 核心需求 2：將小朋友的塗鴉移到新影片的對應位置
-                            if (data.completed_state === "draw_torch") {
-                                // 關卡五：火焰移到牆壁火把位置 (請根據你的畫面微調 Xvw, Yvh 座標)
-                                artworkImg.style.transform = "translate(15vw, -18vh) scale(0.4)"; 
-                            } else if (data.completed_state === "river") {
-                                // 關卡七：橋移到河流中央
-                                artworkImg.style.transform = "translate(0vw, 20vh) scale(0.8)";
-                            } else if (data.completed_state === "draw_umbrella") {
-                                // 關卡十二：雨傘移到小帕頭上
-                                artworkImg.style.transform = "translate(0vw, -15vh) scale(0.6)";
-                            }
-                        });
-
-                        videoPlayer.onended = function() {
-                            videoPlayer.onended = null;
-                            videoPlayer.onerror = null;
-                            // 影片播完後保持現狀，等玩家手動點擊「下一關」
-                        };
-                    } else {
-                        document.getElementById('next-chapter-btn').click();
-                    }
-                })
-                .catch(err => { document.getElementById('next-chapter-btn').click(); });
-        });
-
-        // --- 2. 新增：下一關按鈕點擊邏輯 ---
-        document.getElementById('next-chapter-btn').addEventListener('click', function() {
-            // 隱藏自己與塗鴉，恢復字卡顯示
-            document.getElementById('next-chapter-btn').style.display = "none";
-            document.getElementById('user-artwork').style.display = "none";
-            document.getElementById('ui-panel').style.display = "block"; 
-            
-            // 告訴後端：我們看完了，現在可以正式切換到下一關了
-            fetch('/next_chapter', { method: 'POST' })
-                .then(() => {
-                    storyLoop = setInterval(fetchStory, 1000); // 重啟巡邏
-                    fetchStory(); // 載入下一關（第六、八、十三關）
-                });
-        });
-        // --- 秘密密道 (雙擊) ---
-        document.getElementById('story-card').addEventListener('dblclick', function() {
-            if (currentTask === "voice_shout") {
-                fetch('/complete_voice', { method: 'POST' }).then(() => fetchStory());
-            }
-        });
-
-        // --- 畫布邏輯 ---
-        const canvas = document.getElementById('drawing-canvas');
-        const ctx = canvas.getContext('2d');
-        function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-        window.addEventListener('resize', resizeCanvas); resizeCanvas();
-
-        let isDrawing = false;
-        function getPos(e) {
-            let clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            let clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            return { x: clientX, y: clientY };
-        }
-        function startPosition(e) { isDrawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); ctx.strokeStyle = '#FF5722'; ctx.lineWidth = 15; ctx.lineCap = 'round'; }
-        function draw(e) { if (!isDrawing) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); }
-        function endPosition() { isDrawing = false; }
-
-        canvas.addEventListener('mousedown', startPosition);
-        canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('mouseup', endPosition);
-        canvas.addEventListener('touchstart', startPosition);
-        canvas.addEventListener('touchmove', draw);
-        canvas.addEventListener('touchend', endPosition);
-
-        // --- 語音辨識 ---
-        let recognition = null;
-        try {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (SpeechRecognition) {
-                recognition = new SpeechRecognition();
-                recognition.lang = 'zh-TW'; recognition.continuous = true; recognition.interimResults = true;
-                recognition.onresult = function(event) {
-                    const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase();
-                    if (currentTask === "voice_shout") {
-                        if (transcript.includes("開門") || transcript.includes("測試") || transcript.includes("帕") || transcript.includes("唱") || transcript.includes("一二三") || transcript.includes("嗨") || transcript.includes("test")) {
-                            fetch('/complete_voice', { method: 'POST' }).then(() => fetchStory());
-                        }
-                    }
-                };
-            }
-        } catch(e) {}
-
-        // --- 故事引擎 ---
-        function triggerEndPage() {
-            if(isGameEnded) return;
-            isGameEnded = true;
-            if(storyLoop) clearInterval(storyLoop);
-            
-            let endPage = document.getElementById('end-page');
-            let endVideo = document.getElementById('end-bg-video');
-            
-            endPage.style.display = 'flex';
-            setTimeout(() => { endPage.style.opacity = '1'; }, 100);
-            endVideo.play();
-        }
-
-        function fetchStory() {
-            if(isGameEnded) return;
-            fetch('/get_story')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('story-title').innerText = data.title;
-                    document.getElementById('story-text').innerHTML = data.content;
-                    
-                    // 尋找這段程式碼並加上隱藏指令
-                    if(data.video !== currentVideoFile) {
-                        currentVideoFile = data.video;
-                        let videoPlayer = document.getElementById('bg-video');
-                        videoPlayer.src = "/static/videos/" + currentVideoFile;
-                        videoPlayer.load();
-                        videoPlayer.play().catch(e=>{});
-                        
-                        // 💡 換場景時，把上一關畫的圖案藏起來
-                        document.getElementById('user-artwork').style.display = "none";
-                    }
-
-                    let btn = document.getElementById('finish-draw-btn');
-                    let camera = document.getElementById('camera-box');
-                    let uiPanel = document.getElementById('ui-panel');
-                    let voiceIndicator = document.getElementById('voice-indicator');
-
-                    if (data.task === "none" && data.title === "冒險終點") {
-                        triggerEndPage(); return;
-                    }
-
-                    if (data.task !== currentTask) {
-                        currentTask = data.task;
-                        
-                        if (currentTask.startsWith("draw")) {
-                            canvas.style.display = "block"; btn.style.display = "block"; camera.style.display = "none";
-                            uiPanel.style.bottom = "auto"; uiPanel.style.top = "30px";
-                            
-                            // 💡 修正 1：進入畫畫模式時，強制隱藏語音提示字樣，避免殘留
-                            voiceIndicator.style.display = "none"; 
-                            
-                        } else if (currentTask === "voice_shout") {
-                            voiceIndicator.style.display = "block";
-                            if (recognition) { try { recognition.start(); } catch(e) {} }
-                        } else {
-                            canvas.style.display = "none"; btn.style.display = "none"; voiceIndicator.style.display = "none";
-                            camera.style.display = "block"; uiPanel.style.top = "auto"; uiPanel.style.bottom = "40px";
-                            if (recognition) { try { recognition.stop(); } catch(e) {} }
-                        }
-                    }
-                })
-        }
-    </script>
+    <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 </body>
 </html>
