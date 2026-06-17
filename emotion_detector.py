@@ -25,13 +25,13 @@ class VisionController:
                 except: pass
 
             # 💡 靈敏度提升：過關門檻降至 40，並使用 cached_emotion 判斷
-            if current_task == "emotion_happy" and self.cached_emotion.get('happy', 0) > 40:
+            if current_task == "emotion_happy" and self.cached_emotion.get('happy', 0) > 55:
                 oval_color = (0, 200, 100)
                 if time.time() - last_trigger_time > 4: should_advance = True
-            elif current_task == "emotion_sad" and self.cached_emotion.get('sad', 0) > 40:
+            elif current_task == "emotion_sad" and self.cached_emotion.get('sad', 0) > 50:
                 oval_color = (255, 100, 100)
                 if time.time() - last_trigger_time > 4: should_advance = True
-            elif current_task == "emotion_surprise" and self.cached_emotion.get('surprise', 0) > 40:
+            elif current_task == "emotion_surprise" and self.cached_emotion.get('surprise', 0) > 55:
                 oval_color = (200, 100, 255)
                 if time.time() - last_trigger_time > 4: should_advance = True
 

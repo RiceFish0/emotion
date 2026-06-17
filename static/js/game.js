@@ -1,10 +1,10 @@
-// static/js/game.js 最終完美整合版
+// static/js/game.js 最終打磨版
 
 let currentVideoFile = "";
 let currentTask = "";
 let isGameEnded = false;
 let storyLoop = null;
-let activeClones = []; // 用來管理第十五關音符分身的陣列
+let activeClones = []; 
 
 // 音樂全局解鎖與修復機制
 document.body.addEventListener('click', function() {
@@ -16,7 +16,8 @@ document.getElementById('start-btn').addEventListener('click', function() {
     document.getElementById('cover-page').style.opacity = '0';
     setTimeout(() => { document.getElementById('cover-page').style.display = 'none'; }, 1000);
     let bgm = document.getElementById('bgm');
-    bgm.volume = 0.25; 
+    // 💡 修正 1：把初始音量從 0.25 調大到 0.6，一開始就能清楚聽見！
+    bgm.volume = 0.6; 
     bgm.play().catch(e=>{});
     fetchStory();
     storyLoop = setInterval(fetchStory, 1000);
@@ -27,11 +28,9 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
     let drawingDataUrl = canvas.toDataURL('image/png');
     let artworkImg = document.getElementById('user-artwork');
     
-    // 設定圖片來源
     artworkImg.src = drawingDataUrl;
-    
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
-    canvas.style.display = "none"; // 隱藏畫布
+    canvas.style.display = "none"; 
     
     let uiPanel = document.getElementById('ui-panel');
     let storyText = document.getElementById('story-text');
@@ -40,7 +39,6 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
 
     if (storyLoop) { clearInterval(storyLoop); storyLoop = null; }
 
-    // 將圖片資料發送給後端
     fetch('/complete_drawing', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -48,50 +46,39 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
     })
     .then(response => response.json())
     .then(data => {
-        uiPanel.style.display = "none"; // 隱藏文字字卡
-        document.getElementById('next-chapter-btn').style.display = "block"; // 顯示下一關按鈕
+        uiPanel.style.display = "none"; 
+        document.getElementById('next-chapter-btn').style.display = "block"; 
 
         if (data.play_action_video) {
             let videoPlayer = document.getElementById('bg-video');
             videoPlayer.onerror = function() { document.getElementById('next-chapter-btn').click(); };
 
-            // 切換成成功展示影片
             videoPlayer.src = "/static/videos/" + data.play_action_video;
             
-            // 💡 初始化：清除所有動態特效與類別
             artworkImg.style.transition = "none";
             artworkImg.style.transform = "translate(0px, 0px) scale(1)";
             artworkImg.classList.remove("anim-mic");
 
             videoPlayer.play().then(() => {
-                // 🌟 混合架構：判斷關卡執行對應的前端固定位置位移
                 if (data.completed_state !== "draw_bridge") {
-                    artworkImg.style.display = "block"; // 顯示塗鴉圖層
-                    void artworkImg.offsetWidth; // 強制網頁重繪
+                    artworkImg.style.display = "block"; 
+                    void artworkImg.offsetWidth; 
                     
-                    // 設定 1 秒的平滑動態效果
                     artworkImg.style.transition = "transform 1.0s ease-out"; 
                     
-                    // =============================================================
-                    // 🎯 絕對固定位置調整區 (VW = 螢幕寬度百分比, VH = 螢幕高度百分比)
-                    // =============================================================
                     if (data.completed_state === "draw_torch") {
-                        // 關卡五火把：直接指定移到火炬上方的絕對位置
-                        // (範例：往右移 25% 螢幕寬，往上移 15% 螢幕高，並縮小成 0.4 倍)
-                        artworkImg.style.transform = "translate(10vw, -20vh) scale(0.4)"; 
+                        artworkImg.style.transform = "translate(10vw, -24vh) scale(0.4)"; 
                         
                     } else if (data.completed_state === "draw_umbrella") {
-                        // 關卡十二雨傘：直接指定移到小帕頭頂的絕對位置
-                        // (範例：水平不移動保持置中，往上移 18% 螢幕高，並縮小成 0.8 倍)
-                        artworkImg.style.transform = "translate(0vw, -18vh) scale(0.8)";
+                        artworkImg.style.transform = "translate(0vw, -18vh) scale(0.6)";
                         
                     } else if (data.completed_state === "draw_mic") {
-                        // 關卡十麥克風：移到小帕手部位置，並掛載晃動特效
-                        artworkImg.style.transform = "translate(-10vw, 15vh) scale(0.5)";
+                        // 💡 修正 2：不縮小 (scale保持1)，移到左側偏下 (小帕右手前方)
+                        // 數值可依據影片再次微調：vw越小越往左，vh越大越往下
+                        artworkImg.style.transform = "translate(-12vw, 10vh) scale(1)";
                         setTimeout(() => { artworkImg.classList.add("anim-mic"); }, 1000);
                         
                     } else if (data.completed_state === "draw_note") {
-                        // 關卡十五音符：隱藏原本的大圖，改用多重分身術在固定位置左右搖擺
                         artworkImg.style.display = "none"; 
                         
                         const positions = [
@@ -114,7 +101,6 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
                         });
                     }
                 } else {
-                    // 關卡七 (橋)：使用後端 OpenCV 烘焙好的影片，前端圖片保持隱藏
                     artworkImg.style.display = "none";
                 }
             });
@@ -135,9 +121,8 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
 // --- 點擊「下一關」按鈕邏輯 ---
 document.getElementById('next-chapter-btn').addEventListener('click', function() {
     document.getElementById('next-chapter-btn').style.display = "none";
-    document.getElementById('ui-panel').style.display = "block"; 
-    
-    // 清除第十五關產生的音符分身
+    // 💡 修正 3：刪除了這裡的 uiPanel 顯示指令，把顯示的決定權交給後面的 fetchStory
+
     activeClones.forEach(clone => clone.remove());
     activeClones = [];
 
@@ -201,7 +186,7 @@ function triggerEndPage() {
     isGameEnded = true;
     if(storyLoop) { clearInterval(storyLoop); storyLoop = null; }
     
-    // 💡 補上這一行：進入大結局時，強制把畫面上方的字卡徹底隱藏！
+    // 大結局時，確保字卡強制隱藏
     document.getElementById('ui-panel').style.display = "none";
     
     let endPage = document.getElementById('end-page');
@@ -219,6 +204,9 @@ function fetchStory() {
         .then(response => response.json())
         .then(data => {
             if (data.task === "none") { triggerEndPage(); return; }
+
+            // 💡 修正 3：系統確定這關「不是大結局」後，才把字卡顯示出來，解決閃爍問題！
+            document.getElementById('ui-panel').style.display = "block";
 
             document.getElementById('story-title').innerText = data.title;
             document.getElementById('story-text').innerHTML = data.content;
@@ -240,7 +228,6 @@ function fetchStory() {
             if (data.task !== currentTask) {
                 currentTask = data.task;
                 
-                // 更換任務時，重置所有前端塗鴉圖層
                 artworkImg.style.transition = "none";
                 artworkImg.style.transform = "translate(0px, 0px) scale(1)";
                 artworkImg.style.display = "none";
@@ -249,6 +236,8 @@ function fetchStory() {
                     canvas.style.display = "block"; btn.style.display = "block"; camera.style.display = "none";
                     uiPanel.style.bottom = "auto"; uiPanel.style.top = "30px";
                     voiceIndicator.style.display = "none"; 
+                    // 💡 核心修復：進入繪畫關卡時，必須立刻強制關閉並釋放麥克風，背景音樂才會瞬間恢復大聲！
+                    if (recognition) { try { recognition.stop(); } catch(e) {}}
                 } else if (currentTask === "voice_shout") {
                     voiceIndicator.style.display = "block";
                     if (recognition) { try { recognition.start(); } catch(e) {} }
@@ -259,12 +248,13 @@ function fetchStory() {
                 }
             }
 
-            // 💡 【核心音訊 Bug 修復】：只要當前不是第 14 關語音大喊任務，就強迫恢復 BGM 音量
-            // 這樣能徹底解決離開第 14 關進入第 15 關時，背景音樂被瀏覽器扣留的靈異現象！
-            if (currentTask !== "voice_shout") {
-                let bgm = document.getElementById('bgm');
-                if (bgm.volume !== 0.25 || bgm.paused) {
-                    bgm.volume = 0.25;
+            // 💡 修正 1 進階控制：遇到語音關卡時變極小聲 (0.1)，其餘關卡恢復正常音量 (0.6)
+            let bgm = document.getElementById('bgm');
+            if (currentTask === "voice_shout") {
+                bgm.volume = 0.2;
+            } else {
+                if (bgm.volume !== 0.6 || bgm.paused) {
+                    bgm.volume = 0.6;
                     bgm.play().catch(e=>{});
                 }
             }
