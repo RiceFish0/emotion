@@ -25,10 +25,20 @@ document.getElementById('start-btn').addEventListener('click', function() {
 
 // --- 點擊「我畫好了」按鈕邏輯 ---
 document.getElementById('finish-draw-btn').addEventListener('click', function() {
-    let drawingDataUrl = canvas.toDataURL('image/png');
-    let artworkImg = document.getElementById('user-artwork');
+    let fullDataUrl = canvas.toDataURL('image/png'); // 給後端算橋用的全畫面
+    let cropData = getCroppedImage(canvas, ctx);     // 💡 取得裁切後的新圖片與原始座標
     
-    artworkImg.src = drawingDataUrl;
+    let artworkImg = document.getElementById('user-artwork');
+    artworkImg.src = cropData.url; 
+    
+    // 💡 關鍵設定：解除全螢幕限制，並將圖片放在小朋友剛畫完的真實位置！
+    artworkImg.style.width = "auto";
+    artworkImg.style.height = "auto";
+    artworkImg.style.left = cropData.cx + "px";
+    artworkImg.style.top = cropData.cy + "px";
+    artworkImg.style.transform = "translate(-50%, -50%) scale(1)";
+    artworkImg.style.transition = "none";
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height); 
     canvas.style.display = "none"; 
     
@@ -42,7 +52,7 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
     fetch('/complete_drawing', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image_data: drawingDataUrl })
+        body: JSON.stringify({ image_data: fullDataUrl }) // 後端需要全螢幕資訊
     })
     .then(response => response.json())
     .then(data => {
@@ -54,9 +64,6 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
             videoPlayer.onerror = function() { document.getElementById('next-chapter-btn').click(); };
 
             videoPlayer.src = "/static/videos/" + data.play_action_video;
-            
-            artworkImg.style.transition = "none";
-            artworkImg.style.transform = "translate(0px, 0px) scale(1)";
             artworkImg.classList.remove("anim-mic");
 
             videoPlayer.play().then(() => {
@@ -64,37 +71,48 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
                     artworkImg.style.display = "block"; 
                     void artworkImg.offsetWidth; 
                     
-                    artworkImg.style.transition = "transform 1.0s ease-out"; 
+                    // 💡 開啟全屬性轉場，包含 left 和 top 也會平滑飛行 
                     
                     if (data.completed_state === "draw_torch") {
-                        artworkImg.style.transform = "translate(10vw, -24vh) scale(0.4)"; 
+                        // 火把：絕對位置 (例如畫面的右方 75%，上方 35%)
+                        artworkImg.style.transition = "all 1.0s ease-out";
+                        artworkImg.style.left = "65vw";
+                        artworkImg.style.top = "25vh";
+                        artworkImg.style.transform = "translate(-50%, -50%) scale(0.6)";
                         
                     } else if (data.completed_state === "draw_umbrella") {
-                        artworkImg.style.transform = "translate(0vw, -18vh) scale(0.6)";
+                        // 雨傘：絕對位置 (例如畫面正中央，上方 30%)
+                        artworkImg.style.transition = "all 1.0s ease-out";
+                        artworkImg.style.left = "50vw";
+                        artworkImg.style.top = "40vh";
+                        artworkImg.style.transform = "translate(-50%, -50%) scale(1.0)";
                         
                     } else if (data.completed_state === "draw_mic") {
-                        // 💡 修正 2：不縮小 (scale保持1)，移到左側偏下 (小帕右手前方)
-                        // 數值可依據影片再次微調：vw越小越往左，vh越大越往下
-                        artworkImg.style.transform = "translate(-12vw, 10vh) scale(1)";
-                        setTimeout(() => { artworkImg.classList.add("anim-mic"); }, 1000);
+                        // 麥克風：絕對位置 (小帕右手前)
+                        artworkImg.style.transition = "none";
+                        artworkImg.style.left = "38vw";
+                        artworkImg.style.top = "55vh";
+                        artworkImg.style.transform = "translate(-50%, -50%) scale(0.9)";
+                        artworkImg.classList.add("anim-mic");
                         
                     } else if (data.completed_state === "draw_note") {
                         artworkImg.style.display = "none"; 
                         
                         const positions = [
-                            { left: "20vw", top: "15vh", delay: "0s" },
-                            { left: "50vw", top: "10vh", delay: "0.5s" },
-                            { left: "80vw", top: "20vh", delay: "1s" }
+                            { left: "10vw", top: "30vh", delay: "0s" },
+                            { left: "28vw", top: "5vh", delay: "0s" },
+                            { left: "75vw", top: "15vh", delay: "0s" }
                         ];
 
                         positions.forEach(pos => {
                             let clone = document.createElement('img');
-                            clone.src = drawingDataUrl;
+                            clone.src = cropData.url; // 使用裁切後的大圖
                             clone.className = 'note-clone';
                             clone.style.left = pos.left;
                             clone.style.top = pos.top;
                             clone.style.animationDelay = pos.delay;
-                            clone.style.width = "300px"; 
+                            // 💡 巨大化設定：將分身寬度設為螢幕的 18%！
+                            clone.style.width = "15vw"; 
                             
                             document.getElementById('game-container').appendChild(clone);
                             activeClones.push(clone);
@@ -259,4 +277,45 @@ function fetchStory() {
                 }
             }
         })
+}
+// ==========================================
+// 💡 神級輔助：自動找出塗鴉真實邊界並裁切 (Auto-Crop)
+// ==========================================
+function getCroppedImage(canvas, ctx) {
+    let w = canvas.width, h = canvas.height;
+    let imgData = ctx.getImageData(0, 0, w, h).data;
+    let top = h, left = w, right = 0, bottom = 0;
+    let hasPixel = false;
+
+    // 掃描所有像素，找出有顏色的上下左右邊界
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            if (imgData[(y * w + x) * 4 + 3] > 0) { 
+                hasPixel = true;
+                if (x < left) left = x;
+                if (x > right) right = x;
+                if (y < top) top = y;
+                if (y > bottom) bottom = y;
+            }
+        }
+    }
+    if (!hasPixel) return { url: canvas.toDataURL(), cx: w/2, cy: h/2 };
+
+    let pad = 15; // 留一點安全邊距
+    left = Math.max(0, left - pad);
+    top = Math.max(0, top - pad);
+    right = Math.min(w, right + pad);
+    bottom = Math.min(h, bottom + pad);
+
+    let cropW = right - left, cropH = bottom - top;
+    let tempCanvas = document.createElement('canvas');
+    tempCanvas.width = cropW;
+    tempCanvas.height = cropH;
+    tempCanvas.getContext('2d').putImageData(ctx.getImageData(left, top, cropW, cropH), 0, 0);
+
+    return {
+        url: tempCanvas.toDataURL('image/png'),
+        cx: left + cropW / 2, // 回傳塗鴉中心的 X 座標
+        cy: top + cropH / 2   // 回傳塗鴉中心的 Y 座標
+    };
 }

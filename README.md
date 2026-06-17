@@ -10,7 +10,7 @@
 在終端機輸入這行，讓 Python 在這台電腦重新生成一個乾淨的 `venv` 資料夾：
 
 ```powershell
-python -m venv venv
+py -3.12 -m venv venv
 
 ```
 

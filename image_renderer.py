@@ -105,7 +105,7 @@ def prerender_story_video(source_video_path, output_video_path, base64_image, ta
         # 🌟 專利加分點：關卡七攝影機向左平移，背景往右退。
         # 為了讓橋死死「釘」在河面上，橋必須以每影格約 +3.2 像素的速度往右同步平移！
         # (此數值可根據影片運鏡速度微調)
-        dx = 3.2 
+        dx = 1.5 
 
     frame_idx = 0
     while True:
@@ -115,7 +115,7 @@ def prerender_story_video(source_video_path, output_video_path, base64_image, ta
             
         # 💡 核心優化：設定影格停滯上限 (Frame Clamp)
         if task_type == "draw_bridge":
-            dx = 2.5 
+            dx = 1.5 
             
             # 🌟 調整這裡的數字！
             # 假設小狗大約在影片的第 100 格（約 3~4 秒處）走到左邊對岸
