@@ -1,5 +1,3 @@
-// static/js/game.js 最終打磨版
-
 let currentVideoFile = "";
 let currentTask = "";
 let isGameEnded = false;
@@ -16,7 +14,7 @@ document.getElementById('start-btn').addEventListener('click', function() {
     document.getElementById('cover-page').style.opacity = '0';
     setTimeout(() => { document.getElementById('cover-page').style.display = 'none'; }, 1000);
     let bgm = document.getElementById('bgm');
-    // 💡 修正 1：把初始音量從 0.25 調大到 0.6，一開始就能清楚聽見！
+    //修正 1：把初始音量從 0.25 調大到 0.6，一開始就能清楚聽見！
     bgm.volume = 0.6; 
     bgm.play().catch(e=>{});
     fetchStory();
@@ -26,12 +24,12 @@ document.getElementById('start-btn').addEventListener('click', function() {
 // --- 點擊「我畫好了」按鈕邏輯 ---
 document.getElementById('finish-draw-btn').addEventListener('click', function() {
     let fullDataUrl = canvas.toDataURL('image/png'); // 給後端算橋用的全畫面
-    let cropData = getCroppedImage(canvas, ctx);     // 💡 取得裁切後的新圖片與原始座標
+    let cropData = getCroppedImage(canvas, ctx);     // 取得裁切後的新圖片與原始座標
     
     let artworkImg = document.getElementById('user-artwork');
     artworkImg.src = cropData.url; 
     
-    // 💡 關鍵設定：解除全螢幕限制，並將圖片放在小朋友剛畫完的真實位置！
+    // 解除全螢幕限制，並將圖片放在小朋友剛畫完的真實位置
     artworkImg.style.width = "auto";
     artworkImg.style.height = "auto";
     artworkImg.style.left = cropData.cx + "px";
@@ -71,7 +69,7 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
                     artworkImg.style.display = "block"; 
                     void artworkImg.offsetWidth; 
                     
-                    // 💡 開啟全屬性轉場，包含 left 和 top 也會平滑飛行 
+                    // 開啟全屬性轉場，包含 left 和 top 也會平滑飛行 
                     
                     if (data.completed_state === "draw_torch") {
                         // 火把：絕對位置 (例如畫面的右方 75%，上方 35%)
@@ -111,7 +109,7 @@ document.getElementById('finish-draw-btn').addEventListener('click', function() 
                             clone.style.left = pos.left;
                             clone.style.top = pos.top;
                             clone.style.animationDelay = pos.delay;
-                            // 💡 巨大化設定：將分身寬度設為螢幕的 18%！
+                            // 將分身寬度設為螢幕的 18%！
                             clone.style.width = "15vw"; 
                             
                             document.getElementById('game-container').appendChild(clone);

@@ -4,7 +4,6 @@ import cv2
 import time
 import atexit
 
-# 載入我們的兩大引擎
 from image_renderer import prerender_story_video
 from emotion_detector import VisionController
 
@@ -96,21 +95,21 @@ def complete_drawing():
     action_video_api_path = "" # 這是要交給前端播放的 API 路徑
 
     if action_video_filename:
-        # 💡 核心邏輯：區分是否需要「後端烘焙」
+        #核心邏輯：區分是否需要「後端烘焙」
         if current_task == "draw_bridge":
-            # 🌟 只有第七關(橋)需要後端 OpenCV 離線算圖，解決鏡頭平移
+            #只有第七關(橋)需要後端 OpenCV 離線算圖，解決鏡頭平移
             source_path = f"static/videos/{action_video_filename}"
             output_filename = f"generated_{action_video_filename}"
             output_path = f"static/videos/{output_filename}"
             
-            # 執行耗時的算圖工作
+            #執行耗時的算圖工作
             prerender_story_video(source_path, output_path, base64_str, current_task)
             
-            # 回傳生成的影片檔名，加上時間戳記防快取
+            #回傳生成的影片檔名，加上時間戳記防快取
             action_video_api_path = f"{output_filename}?t={int(time.time())}"
         else:
-            # 🌟 其他關卡 (火把、雨傘、音符) 攝影機沒動，回傳「原始影片」即可！
-            # 後續交給前端 CSS 進行 0 延遲位移與縮放。
+            #其他關卡 (火把、雨傘、音符) 攝影機沒動，回傳原始影片
+            #後續交給前端 CSS 進行 0 延遲位移與縮放。
             action_video_api_path = action_video_filename
 
     return jsonify({

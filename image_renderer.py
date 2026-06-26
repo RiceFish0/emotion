@@ -54,7 +54,7 @@ def alpha_blend(background, overlay, x_offset=0, y_offset=0):
     bg_crop = background[y1:y2, x1:x2]
     ol_crop = overlay[ol_y1:ol_y2, ol_x1:ol_x2]
 
-    # 💡 打開黑盒子：提取第 4 通道的 Alpha 遮罩，並標準化為 0.0 ~ 1.0 的浮點數
+    # 打開黑盒子：提取第 4 通道的 Alpha 遮罩，並標準化為 0.0 ~ 1.0 的浮點數
     alpha = ol_crop[:, :, 3] / 255.0
     alpha_inv = 1.0 - alpha
 
@@ -94,15 +94,15 @@ def prerender_story_video(source_video_path, output_video_path, base64_image, ta
     fourcc = cv2.VideoWriter_fourcc(*'avc1')
     out = cv2.VideoWriter(output_video_path, fourcc, fps, (w, h))
     
-    # 💡 滿分核心巧思：直接將前端全螢幕的畫布，縮放成跟影片一模一樣的解析度！
-    # 這樣小朋友在網頁上畫在哪裡，對應到影片中就是絕對精確的相對位置，免去前端複雜的座標對齊運算。
+    #直接將前端全螢幕的畫布，縮放成跟影片一模一樣的解析度
+    #這樣小朋友在網頁上畫在哪裡，對應到影片中就是絕對精確的相對位置，免去前端複雜的座標對齊運算。
     overlay_img = cv2.resize(overlay_img, (w, h))
     
     # 4. 根據關卡設定運鏡位移參數 (Motion Offset)
     # dx: 每格畫面 (Frame) 塗鴉橫向平移的像素量
     dx = 0
     if task_type == "draw_bridge":
-        # 🌟 專利加分點：關卡七攝影機向左平移，背景往右退。
+        # 關卡七攝影機向左平移，背景往右退。
         # 為了讓橋死死「釘」在河面上，橋必須以每影格約 +3.2 像素的速度往右同步平移！
         # (此數值可根據影片運鏡速度微調)
         dx = 1.5 
@@ -113,13 +113,12 @@ def prerender_story_video(source_video_path, output_video_path, base64_image, ta
         if not ret:
             break
             
-        # 💡 核心優化：設定影格停滯上限 (Frame Clamp)
+        # 設定影格停滯上限 (Frame Clamp)
         if task_type == "draw_bridge":
             dx = 1.5 
             
-            # 🌟 調整這裡的數字！
             # 假設小狗大約在影片的第 100 格（約 3~4 秒處）走到左邊對岸
-            # 我們就用 min() 讓影格數最高只計算到 100，超過 100 之後 effective_frame 就永遠是 100！
+            # 我們就用 min() 讓影格數最高只計算到 100，超過 100 之後 effective_frame 就永遠是 100
             effective_frame = min(frame_idx, 100) 
             
             current_x_offset = int(effective_frame * dx)
